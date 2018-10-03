@@ -1,14 +1,25 @@
 ﻿<?php
+<<<<<<< HEAD
 
+=======
+/**
+ * https://codeigniter.org.cn/user_guide/helpers/url_helper.html
+ * 加载静态内容:https://codeigniter.org.cn/user_guide/tutorial/static_pages.html
+ */
+>>>>>>> 286c0147420831f39a81343a4eeea8074dd6e2ad
 class Main extends CI_Controller {
 
     public function __construct(){
         parent::__construct();
+<<<<<<< HEAD
         header("Access-Control-Allow-Origin: *");
+=======
+>>>>>>> 286c0147420831f39a81343a4eeea8074dd6e2ad
         $this->load->model('Model');
         $this->load->helper('url_helper');
     }
 
+<<<<<<< HEAD
     public function wallpaper($aid=""){
         if(!isset($_GET['page'])) {
             $_GET['page'] = 1;
@@ -63,6 +74,12 @@ class Main extends CI_Controller {
                 $this->db->insert('app', $datae);
             }
         } 
+=======
+    public function view($page='home',$child="last_seen_time"){
+        $this->load->model('Mixcm_pages');
+
+        $this->load->view('pages/'.$page, $data);
+>>>>>>> 286c0147420831f39a81343a4eeea8074dd6e2ad
     }
 
 

@@ -4,6 +4,7 @@ class Model extends CI_Model {
 
     public function __construct(){
         $this->load->database();
+<<<<<<< HEAD
         if (isset($_COOKIE['username']) and isset($_COOKIE['c'])) {
             $post_data = array (
                 'biao' => '*',
@@ -20,6 +21,8 @@ class Model extends CI_Model {
             $this->user=json_decode(curl_exec($ch),true);
             curl_close($ch);
         }
+=======
+>>>>>>> 286c0147420831f39a81343a4eeea8074dd6e2ad
     }
     
     public function get_client_ip (){
@@ -40,6 +43,7 @@ class Model extends CI_Model {
     }
 
     public function get_mixcm_user($biao='uid'){
+<<<<<<< HEAD
         if (isset($_COOKIE['username']) and isset($_COOKIE['c'])) {
             return $this->user[$biao];
         }
@@ -61,5 +65,17 @@ class Model extends CI_Model {
         curl_close($ch);
         return $output;
     }
+=======
+        if(isset($_COOKIE['uid'])){
+            $uid = $_COOKIE['uid'];
+            $this->load->database('mixcm');
+            $query = $this->db->get_where('user', array('name' => $uid));
+            $row = $query->first_row('array');
+            if ($_COOKIE['c'] == md5($row['name'].$row['uid'].'mixcm520')){
+                return $row[$biao];
+            }
+        }
+    }
+>>>>>>> 286c0147420831f39a81343a4eeea8074dd6e2ad
 
 }

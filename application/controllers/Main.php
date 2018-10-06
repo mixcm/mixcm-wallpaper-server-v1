@@ -5,40 +5,73 @@ class Main extends CI_Controller {
         parent::__construct();
         header("Access-Control-Allow-Origin: *");
         $this->load->model('Model');
-        $this->load->helper('url_helper');
     }
 
-    public function wallpaper($aid=""){
-        if(!isset($_GET['page'])) {
-            $_GET['page'] = 1;
+    public function wallpaper($aid=null){
+        if($aid==null){
+            if(!isset($_GET['page'])) {
+                $_GET['page'] = 1;
+            }
+
+            if(isset($_GET['slug'])) {
+                $this->load->model('Meta');
+                $meta = $this->Meta->row_meta($_GET['slug'],true);
+                $query = $this->db->where('mid',$meta['mid']);
+            }
+
+            $limit = $_GET['page']*20-20;
+            $this->db->limit(20, $limit);
+            $query = $this->db->get('relationship');
+            $array = $query->result_array();
+            
+            $this->load->model('Wallpaper');
+            for ($x=0; isset($array[$x]); $x++) {
+                $array[$x] = $this->Wallpaper->row_wallpaper($array[$x]['aid'],true,'aid,width,height,urls');
+            } 
+            echo json_encode($array);
+        }else{
+            $this->load->model('Wallpaper');
+            $this->Wallpaper->row_wallpaper($aid);
         }
-        $limit = $_GET['page']*20-20;
-        $this->db->limit(20, $limit);
+    }
+
+    public function meta($slug=null) {
+        if($slug==null){
+            if(!isset($_GET['type']) or ($_GET['type'] != 'class' and $_GET['type'] != 'tag')) {
+                $_GET['type'] = 'class';
+            }
+            $this->db->select('name,slug,description,created_at');
+            $this->db->where('type',$_GET['type']);
+            $query = $this->db->get('meta');
+            $array = $query->result_array();
+            echo json_encode($array);
+        }else{
+            $this->load->model('Meta');
+            $this->Meta->row_meta($slug);
+        }
+    }
+
+    public function re() {
         $query = $this->db->get('app');
         $array = $query->result_array();
-        $x = 0;
-        while(isset($array[$x])){
-            $array[$x]['urls'] = json_decode($array[$x]['urls']);
-            $array[$x]['links'] = json_decode($array[$x]['links']);
-            $x += 1;
+        foreach ($array as $value) {
+            $this->db->where('aid', $value['aid']);
+            $this->db->from('relationship');
+            $count = $this->db->count_all_results();
+            if($count == 0){
+                $datae = array(
+                    'aid' => $value['aid'],
+                    'mid' => 3,
+                );
+                $this->db->insert('relationship', $datae);
+            }
         }
-        echo json_encode($array);
-    }
-
-    public function meta() {
-        if(!isset($_GET['type']) or ($_GET['type'] != 'class' and $_GET['type'] != 'tag')) {
-            $_GET['type'] = 'class';
-        }
-        $this->db->select('name,slug,description,created_at');
-        $this->db->where('type',$_GET['type']);
-        $query = $this->db->get('meta');
-        $array = $query->result_array();
-        echo json_encode($array);
+        print_r($array);
     }
 
     public function mode($page='home'){
         $data = json_decode(
-            $this->Model->get_info('https://api.unsplash.com/photos/?client_id=0d095f7c17a870835c4b9aae20fa4ffcafb7ba4cb0c627668dfe56561a6fa83c&per_page=30&page=6')
+            $this->Model->get_info('https://api.unsplash.com/photos/?client_id=0d095f7c17a870835c4b9aae20fa4ffcafb7ba4cb0c627668dfe56561a6fa83c&per_page=30&page=5')
             ,true
         );
         print_r($data);
@@ -47,6 +80,14 @@ class Main extends CI_Controller {
             $this->db->from('app');
             $count = $this->db->count_all_results();
             if($count == 0){
+                $data_single = json_decode(
+                    $this->Model->get_info('https://api.unsplash.com/photos/'.$e['id'].'?client_id=0d095f7c17a870835c4b9aae20fa4ffcafb7ba4cb0c627668dfe56561a6fa83c&per_page=30&page=1')
+                    ,true
+                );
+                $user = array(
+                    'name' => $e['user']['name'],
+                    'url' => $e['user']['links']['html'],
+                );
                 $datae = array(
                     'aid' => $e['id'],
                     'created_at' => strtotime($e['created_at']),
@@ -55,11 +96,20 @@ class Main extends CI_Controller {
                     'height' => $e['height'],
                     'color' => $e['color'],
                     'description' => $e['description'],
+                    'uid' => '6000',
                     'urls' => json_encode($e['urls']),
                     'links' => json_encode($e['links']),
-                    'uid' => '6000',
+                    'author' => json_encode($user),
+                    'exif' => json_encode($data_single['exif']),
+                    'location' => json_encode($data_single['location']),
                 );
                 $this->db->insert('app', $datae);
+
+                $re = array(
+                    'aid' => $e['id'],
+                    'mid' => 3,
+                );
+                $this->db->insert('relationship', $re);
             }
         } 
     }

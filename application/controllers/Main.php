@@ -22,12 +22,26 @@ class Main extends CI_Controller {
 
             $limit = $_GET['page']*20-20;
             $this->db->limit(20, $limit);
-            $query = $this->db->get('relationship');
+            $this->db->select('aid,author,width,height,urls');
+            $this->db->order_by('updated_at DESC');
+            $query = $this->db->get('app');
             $array = $query->result_array();
-            
-            $this->load->model('Wallpaper');
+
+            $this->load->model('Meta');
             for ($x=0; isset($array[$x]); $x++) {
-                $array[$x] = $this->Wallpaper->row_wallpaper($array[$x]['aid'],true,'aid,width,height,urls');
+                $array[$x]['urls'] = json_decode($array[$x]['urls']);
+                $this->db->where('aid',$array[$x]['aid']);
+                $this->db->select('mid');
+                $query = $this->db->get('relationship');
+                $metas = $query->result_array();
+                foreach ($metas as $meta) {
+                    $meta = $this->Meta->mid_meta($meta['mid'],true);
+                    if($meta['type'] == 'class'){
+                        $array[$x]['meta']['class'] = $meta;
+                    }elseif($meta['type'] == 'tag'){
+                        array_push($array[$x]['meta']['tag'],$meta);
+                    }
+                }
             } 
             echo json_encode($array);
         }else{
@@ -72,25 +86,20 @@ class Main extends CI_Controller {
 
     public function mode($page='home'){
         $data = json_decode(
-            $this->Model->get_info('https://api.unsplash.com/photos/?client_id=0d095f7c17a870835c4b9aae20fa4ffcafb7ba4cb0c627668dfe56561a6fa83c&per_page=30&page=5')
+            $this->Model->get_info('https://api.unsplash.com/photos/?client_id=7ab2e7a3a804f2007c49530a0d0372fea2231079181a22775c23d58a3cfb1880&per_page=30&page=4')
             ,true
         );
-        print_r($data);
         foreach ($data as $e) {
-            $this->db->where('aid', $e['id']);
+            $this->db->where('crawler_id', $e['id']);
             $this->db->from('app');
             $count = $this->db->count_all_results();
             if($count == 0){
-                $data_single = json_decode(
-                    $this->Model->get_info('https://api.unsplash.com/photos/'.$e['id'].'?client_id=0d095f7c17a870835c4b9aae20fa4ffcafb7ba4cb0c627668dfe56561a6fa83c&per_page=30&page=1')
-                    ,true
-                );
                 $user = array(
                     'name' => $e['user']['name'],
                     'url' => $e['user']['links']['html'],
                 );
                 $datae = array(
-                    'aid' => $e['id'],
+                    'crawler_id' => $e['id'],
                     'created_at' => strtotime($e['created_at']),
                     'updated_at' => strtotime($e['updated_at']),
                     'width' => $e['width'],
@@ -101,13 +110,11 @@ class Main extends CI_Controller {
                     'urls' => json_encode($e['urls']),
                     'links' => json_encode($e['links']),
                     'author' => json_encode($user),
-                    'exif' => json_encode($data_single['exif']),
-                    'location' => json_encode($data_single['location']),
                 );
                 $this->db->insert('app', $datae);
-
+                print_r($this->db->insert_id());
                 $re = array(
-                    'aid' => $e['id'],
+                    'aid' => $this->db->insert_id(),
                     'mid' => 3,
                 );
                 $this->db->insert('relationship', $re);

@@ -6,7 +6,7 @@ $query_builder = TRUE;
 
 $db['wallpaper'] = array(
 	'dsn'	=> '',
-	'hostname' => '47.93.60.166',
+	'hostname' => 'localhost',
 	'username' => 'wallpaper',
 	'password' => 'iDJ2seisBJzCeHbS',
 	'database' => 'wallpaper',
